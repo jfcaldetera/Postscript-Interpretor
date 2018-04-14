@@ -1,11 +1,13 @@
 # Jhenna-Rae Foronda-Caldetera, 11423409
 # Unix/Linux Environment 
-# HW 4 - Python Postscript Interpreter Part 1
+# HW 4 - Python Postscript Interpreter Part 2
+# Comments - Code doesnt pass 2a or 2b
 
 import re
+import ast
 # global variables
 opStack = []
-dictStack = []
+dictStack = [{}]
 
 # ---------- operand stack ---------- #
 
@@ -230,6 +232,7 @@ def roll():
 # clears the stack
 def clear():
     del opStack[:]
+    del dictStack[:]
 
 # prints the stack
 def stack():
@@ -464,43 +467,42 @@ def tokenize(s):
     return retValue
 
 
+def parse(tokens):
+    return group(tokens)
+
+
 def groupMatching(it):
     res = []
     for c in it:
-        if c == ')':
+        if c == '}':
             return res
-        else:
+        elif c == '{':
             res.append(groupMatching(it))
-    return False
-
-def group(s):
-    if s[0] == '(':
-        return groupMatching(iter(s[1:]))
-    else: return False
-
-def parseMatching(it):
-    res = []
-    for c in it:
-        if c == '}' or c == ']':
-            return res
-        elif c == '{' or c == '[': 
-            res.append(parseMatching(it)) 
-        elif isInt(c) or c[0] == '-': 
-            res.append(int(c))
-        elif c[0] == "[":
-            temp = []
-            for item in c:
-                if isInt(item):
-                    temp.append(int(item))
-            res.append(temp)
         else:
+            if isInt(c) == True:
+                c = int(c)
             res.append(c)
     return False
 
-def parse(tokens):
-    if tokens[0] == '{':
-        return parseMatching(iter(tokens[1:]))
-    else: return False 
+def group(s):
+    res = []
+    it = iter(s)
+    for c in it:
+        if c == '}': return False
+        elif c == '{': res.append(groupMatching(it))
+        elif c[0] == "[":
+            temp = []
+            for item in c:
+                if isInt(item) == True:
+                    temp.append(int(item))
+            res.append(temp)
+        else:
+            if isInt(c) == True: c = int(c)
+            res.append(c)
+    return res
+
+
+    
 
 
 def interpret(tokenList):
@@ -519,6 +521,7 @@ def interpret(tokenList):
             
             elif token[0] == '/' : # case of name
                 opPush(token)
+
             else:
                 func = builtinFunctions.get(token,None)  # case of built-in function
                 if func != None:
@@ -538,91 +541,97 @@ def interpreter(s):
 	interpret(parse(tokenize(s)))
 
 
-def main():
-    # ---------- testing parsing --------- #
-    print(parse(tokenize(
-        """
-        { /square {dup mul} def 1 square 2 square 3 square add add }
-        """
-        )))
-        
-    print("\n")
-    
-    print(parse(tokenize(
-        """
-        { /n 5 def 1 n -1 1 {mul} for }
-        """
-        )))
-        
-    print("\n")
-    
-    print(parse(tokenize(
-    """
-        { /sum { -1 0 {add} for} def
-        0
-        [1 2 3 4] length
-        sum
-        2 mul
-        [1 2 3 4] 2 get
-        add add add
-        stack }
-    """)))
-    
-    print("\n")
-    
-    # ------- testing tokenizing ------ #
-    print (tokenize(
-    """
-        { /fact{
-        0 dict
-            begin
-                /n exch def
-                 1
-                n -1 1 {mul} for
-            end
-        }def
-        [1 2 3 4 5] dup 4 get pop
-        length
-        fact
-        stack }
-        """))
-        
-    print("\n")
-    
-    # ------ testing interpretor ------ #
-    interpreter("{6 4 add 10 5 sub 8 3 mul 100 25 div 42 7 mod}")
-    if opStack != [10, 5, 24, 4, 0]:
-        print("test 1 failed")
-    else:
-        print ("test 1 pass")
-    clear()
-    
-    interpreter("{1 2 3 4 5 6 4 2 roll}")
-    if opStack != [1, 2, 5, 6, 3, 4]:
-        print("test 2 failed")
-    else:
-        print ("test 2 pass")
-    clear()
-    
-    interpreter("{/x 4 def x x add}")
-    if opPop() != 8:
-        print("test 3 failed")
-    else:
-        print ("test 3 pass")
-    clear()
-    
-    interpreter("{ [1 2 3 4 5] length dup [1 2 3 4 5] 3 get }")
-    if opStack != [5, 5, 4]:
-        print("test 4 failed")
-    else:
-        print ("test 4 pass")
-    clear()
-    
-    interpreter("{ /fact { 0 dict begin /n exch def 1 n -1 1 {mul} for end } def [1 2 3 4 5] dup 4 get pop length fact stack }")
-    if (opPop() != 120):
-        print("test 5 failed")
-    else:
-        print ("test 5 pass")
-    clear()
+def main_part2():
 
-main()
+
+#---------Test Case 1 -------
+    print('---------Test Case-1 (15%)-------')
+    testcase1= """
+    /fact{
+    0 dict
+            begin
+                    /n exch def
+                    1
+                    n -1 1 {mul} for
+            end
+    }def
+    [1 2 3 4 5] dup 4 get pop
+    length
+    fact
+    stack
+    """
+    interpreter(testcase1)
+    #output should print 120
+    clear() #clear the stack for next test case
+
+
+#---------Test Case 3 -------
+    print('---------Test Case-3 (20%) -------')
+    testcase3 = """
+     /x 10 def 
+     /y 5 def
+     /f1 { x y 1 dict begin
+                /y /z y def x def
+                /x z def
+                x y sub
+         end} def 
+     f1 3 1 roll sub     
+     stack
+    """
+    interpreter(testcase3)
+    #should print 5  -5
+    clear() #clear the stack for next test case
+
+#---------Test Case 4 -------
+    print('---------Test Case-4 (15%)-------')
+    testcase4 = """
+        /sum { -1 0 {add} for} def 
+        0 
+        [1 2 3 4] length 
+        sum 
+        2 mul 
+        [1 2 3 4] 2 get 
+        add  
+        stack 
+    """
+    interpreter(testcase4)
+    # should print 23
+    clear() #clear the stack for next test case
+
+#---------Test Case 5 -------
+    print('---------Test Case-5 (15%) -------')
+    testcase5 = """
+        /a 2 def
+        /b 3 def
+        /f1 { 1 dict begin 
+                a 1 add /a exch def 
+                2 dict begin 
+                a 1 sub /a exch def 
+                b 1 add /b exch def 
+             end
+             a b mul
+             end } def
+        f1
+        stack
+    """
+    interpreter(testcase5)
+    # should print 9
+    clear() #clear the stack for next test case
+
+    print('---------Test Case-6 (15%) -------')
+    testcase6 = """
+        /x 2 def
+        /y 3 def
+        /fn { x y add
+              x y mul
+        } def
+        fn add 
+        stack
+    """
+    interpreter(testcase6)
+    print("---------------------------")
+    # should print 11
+    clear() #clear the stack for next test case
+
+if __name__ == '__main__':
+    main_part2()
